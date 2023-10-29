@@ -1,0 +1,212 @@
+<%- include('./partials/header.ejs'); %>
+    <div id="chat-container">
+      <div id="search-container">
+        <input type="text" placeholder="Search"/>
+        <div class = 'suggestion-container'></div>
+      </div>
+      <div id="conversation-list">
+      </div>
+      <div id="new-message-container">
+        <a href="#">+</a>
+      </div>
+      <div id="chat-title">
+        <span>Sumit</span>
+        <img src="./images/trash.png" alt="Delete Conversation" />
+      </div>
+      <div id="chat-message-list">
+        <!-- <div class="message-row other-message">
+          <div class="message-content">
+          </div>
+        </div>
+        <div class="message-row you-message">
+          <div class="message-content">
+          </div>
+        </div> -->
+      </div>
+      <div id="chat-form">
+        <img src="./images/attachment.png" alt=Add Attachment"" />
+        <input id = 'text' type="text" placeholder="Type a message" style = 'color: white; width: 80%;'/>
+        <button onclick = 'sendMessage()'>Send</button>
+      </div>
+    </div>
+
+    <!-- <div class="modal-wrapper">
+      <div class="modal">
+        <a href="#" class="modal-close">+</a>
+        <div class="modal-title">
+          <h2>Create New Conversation</h2>
+        </div>
+        <div class="modal-body">
+          <form>
+            <input type="text" placeholder="Name" />
+            <input type="text" placeholder="Username" />
+            <input type="button" value="Submit" />
+          </form>
+        </div>
+      </div>
+    </div> -->
+    <script src="/socket.io/socket.io.js"></script>
+    <script>
+      const socket = io('ws://localhost:5000');
+      socket.on('chat', (msg) => {
+        console.log(msg);
+      });
+      let search = document.querySelector('#search-container > input');
+      let sender;
+      let receiver;
+      let allConversations;
+      async function sendMessage(){
+        let text = document.getElementById('text').value;
+        await fetch('/inbox/sendMessage', {
+          method: 'POST',
+          headers:{
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({
+            sender: sender.id,
+            receiver,
+            text
+          })
+        })
+      }
+      async function openChat(event){
+        receiver = event.target.getAttribute('data-key');
+        let res = await fetch('/inbox/getMessages', {
+          method: 'POST',
+          headers:{
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({
+            sender: sender.id,
+            receiver
+          })
+        })
+        res = await res.json();
+        let container = document.getElementById('chat-message-list');
+        container.innerHTML = '';
+        res.forEach(message => {
+          let c = (sender.id === message.sender_id ? 'sender': 'receiver');
+          container.innerHTML += `<div class = ${c} style = 'color: white; font-size: 2rem;'>${message.text}</div>`;
+        })
+        document.querySelector('#chat-title > span').innerText = event.target.innerText;
+      }
+      function loadConversations(){
+        let x = document.getElementById('conversation-list');
+        allConversations.forEach(conversation =>{
+          x.innerHTML += `<div class = 'conversation'><img src = '../public/images/nophoto.png'><span onclick = 'openChat(event)' data-key = ${conversation.participant_id}>${conversation.participant}</span></div>`
+        })
+      }
+      async function getConversations(){
+          allConversations = await fetch('/inbox/getConversations', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({id: sender.id})
+        })
+        allConversations = await allConversations.json();
+      }
+      async function getSender(){
+        sender = await fetch('/inbox/getSender', {
+          method: 'GET',
+        })
+        sender = await sender.json();
+      }
+      async function sendCreateRequest(participant_id, participant) {
+        const reqBody = {
+          creator_id: sender.id,
+          creator: sender.username,
+          participant_id,
+          participant
+        }
+        await fetch('inbox/createConversation', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify(reqBody)
+        })
+        location.reload();
+      }
+      function prepareSearchResult(recievers){
+
+        let container = document.querySelector('.suggestion-container');
+        container.innerHTML = '';
+        recievers.forEach(reciever => {
+          if(reciever.mobile !== sender.mobile){
+            container.innerHTML += `<p class = 'matched-reciever' data-key = ${reciever.id}>${reciever.name}</p>`
+          }
+        })
+        document.querySelectorAll('.matched-reciever').forEach(reciever => {
+            reciever.addEventListener('click', event => {
+              let current = event.target.getAttribute('data-key');
+              let f = 0;
+              allConversations.forEach(conversation =>{
+                if(conversation.participant_id === current) f = 1;
+              })
+              if(!f) sendCreateRequest(current, event.target.innerText);
+            })
+        })
+      }
+      async function sendUpdateRequest(id) {
+        const reqBody = {
+          id
+        }
+        let res = await fetch('inbox/updateConversation', {
+          method: 'PUT',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify(reqBody)
+        })
+        res = await res.json();
+        console.log(res);
+        location.reload();
+      }
+      
+      async function callAPI(){
+        try{
+          let newReceiver = await fetch('/inbox/searchNewReciever', {
+            method: 'POST',
+            headers: {
+              'Content-type': 'application/json'
+            },
+            body: JSON.stringify({ searchItem: search.value })
+          })
+          newReceiver = await newReceiver.json();
+          prepareSearchResult(newReceiver)
+        }
+        catch(err){
+          console.log(err);
+        }
+      }
+      function debounce(delay){
+        let timeout;
+        return function(){
+          if(timeout){
+            clearTimeout(timeout);
+          }
+          timeout = setTimeout(()=>{
+            if(search.value !== ''){
+              callAPI();
+            }
+          }, delay)
+        }
+      }
+
+      getSender()
+      .then(() => getConversations())
+      .then(() => loadConversations())
+      .then(() => {
+        search.addEventListener('keydown', debounce(300));
+        /*document.querySelectorAll('.conversation').forEach(curr => {
+          curr.addEventListener('click', (event) => {
+            console.log(event.target);
+            sendUpdateRequest(event.target.getAttribute('data-key'));
+          })
+        })*/
+      });
+      
+    </script>
+  </body>
+  </html>
