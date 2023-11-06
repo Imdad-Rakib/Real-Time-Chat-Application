@@ -2,6 +2,7 @@ import { ActiveClients } from "../models/activeClients.mjs"
 import { Conversation } from "../models/conversation.mjs";
 import { Message } from "../models/message.mjs";
 import { io } from "../app.mjs";
+import { Room } from "../models/room.mjs";
 async function addClient(email, connectionId){    
     
     try{
@@ -13,10 +14,10 @@ async function addClient(email, connectionId){
             connectionId
         })
         await newClient.save();
-        let unsentMsg = await Message.find({
-            receiver: email,
-            sent: false,
-        });
+        // let unsentMsg = await Message.find({
+        //     receiver: email,
+        //     sent: false,
+        // });
         // if(unsentMsg.length){
             
         // }
@@ -37,21 +38,28 @@ async function removeClient(connectionId){
     }
 }
 async function handlePrivateMsg(message){    
-    
     try{
         
-        const {text, sender, sender_name, receiver, receiver_name} = message;
+        const {text, sender, conversation_id, sender_name, receiver_name, receiver, room_name} = message;
         let conversation = await Conversation.findOne({
-            $or:[
-                {creator: sender, participant: receiver},
-                {creator: receiver, participant: sender}
+            $or: [
+                { creator: sender, participant: receiver },
+                { creator: receiver, participant: sender },
             ]
         })
+        let room = {};
         if(conversation){
             conversation.last_updated = Date.now();
             conversation.last_msg = text;
             conversation.updated_by = sender;
             conversation.isOpened = false;
+            conversation.last_room = room_name,
+            conversation = await conversation.save();
+            room = await Room.findOne({
+                conversation_id,
+                name: room_name
+            })
+            
         }else{
             conversation = new Conversation({
                 creator: sender,
@@ -61,15 +69,25 @@ async function handlePrivateMsg(message){
                 last_updated: Date.now(),
                 last_msg: text,
                 updated_by: sender,
-                isOpened: false
+                isOpened: false,
+                last_room: 'General',
             })
+            conversation = await conversation.save();
+            room = new Room({
+                conversation_id: conversation._id,
+                name: 'General',
+                creator: sender,
+            })
+            await room.save();
         }
-        conversation = await conversation.save();
+        let msg = new Message({room_id: room._id, text, sender, receiver });
+        msg = await msg.save();
+
         let user = await ActiveClients.findOne({
             email: receiver,
         })
         if(user){
-            io.to(user.connectionId).emit('private_message', {text, sender, receiver, createdAt: Date.now(),}, conversation,
+            io.to(user.connectionId).emit('private_message', msg, conversation)
                 // if(status !== null && status.ok){
                 //         Conversation.findOneAndUpdate(
                 //         {
@@ -99,10 +117,11 @@ async function handlePrivateMsg(message){
             // //         // })();
             // //     }
             // })
-        )}
-        let msg = new Message({text, sender, receiver});
-        msg = await msg.save();
-        return {conversation}
+        }
+        return {
+            conversation,
+            msg,
+        }
         // console.log(newMsg);
     }
     catch(err){

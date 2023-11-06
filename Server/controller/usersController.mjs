@@ -71,7 +71,6 @@ async function verifyPassOtp(req, res, next){
             email: req.body.email,
             OTP: req.body.OTP
         })
-        console.log(token);
         if(token){
             let {email, OTP} = token;
             await PasswordResetToken.deleteMany({
@@ -152,7 +151,6 @@ async function updatePassword(req, res, next){
 //             res.redirect(`http://localhost:${process.env.CLIENT_PORT}/blank`)
 //         }
 //     }catch(err){
-//         console.log(err);
 //         res.status(500).json({
 //             error: 'An error occured. Please try again'
 //         })

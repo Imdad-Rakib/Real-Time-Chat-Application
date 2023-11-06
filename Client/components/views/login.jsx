@@ -1,10 +1,11 @@
 import {Alert, View, Text, TextInput, TouchableOpacity, StyleSheet } from 'react-native';
 import { Formik } from 'formik';
 import * as Yup from 'yup';
-import { useDispatch } from 'react-redux'; 
+import { useDispatch, useSelector } from 'react-redux'; 
 import { setUser } from '../../store/slices/userSlice.mjs';
 import { setSocket } from '../../store/slices/socketSlice.mjs';
-import { io } from 'socket.io-client';
+// import { io } from 'socket.io-client';
+import { socketConfiguration } from '../../Socket/index.mjs';
 
 const LoginSchema = Yup.object().shape({
     email: Yup.string().email('Invalid email').required('Email is required'),
@@ -27,6 +28,8 @@ const showError = (err) => {
 export default function Login({navigation}) {
 
     const dispatch = useDispatch();
+    // const currentChat = useSelector((state) => state.currentChat);
+
     const handleLogin = async (values) => {
         try {
             let response = await fetch('http://localhost:5000/',
@@ -45,12 +48,14 @@ export default function Login({navigation}) {
             }
             else{
                 dispatch(setUser(response));
-                const socket = io('http://localhost:5000')
-                socket.on('connect', () => {
-                    dispatch(setSocket(socket));
-                    socket.emit('client-info', response.email);
-                    navigation.navigate('Chats');
-                });
+                socketConfiguration(response.email, dispatch);
+                navigation.navigate('Chats');
+                // const socket = io('http://localhost:5000')
+                // socket.on('connect', () => {
+                //     dispatch(setSocket(socket));
+                //     socket.emit('client-info', response.email);
+                //     navigation.navigate('Chats');
+                // });
             }
         }
         catch (err) {

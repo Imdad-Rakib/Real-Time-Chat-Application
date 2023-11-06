@@ -1,42 +1,23 @@
 import React, {useState, useEffect, useRef} from 'react';
 import {ActivityIndicator, Alert, Button, View, Text, StyleSheet, TextInput, FlatList, TouchableOpacity, ImageComponent } from 'react-native';
-import { timestamp } from '../../utilities/timestamp.mjs';
-import { useRoute } from "@react-navigation/native";
 import { useSelector } from 'react-redux';
 import { useDispatch} from 'react-redux';
-import { updateConversation } from '../../store/slices/conversationSlice.mjs';
+import { setMessages } from '../../store/slices/messageSlice.mjs';
+import { setCurrentChat } from '../../store/slices/currentChatSlice.mjs';
 import Icon from 'react-native-vector-icons/MaterialIcons'
+import { useNavigation } from "@react-navigation/native";
+import { handleSend } from '../../Socket/index.mjs';
 
 const Inbox = () => {
-    const route = useRoute();
     const dispatch = useDispatch();
-    const sender = useSelector((state) => state.user);
     const socket = useSelector((state) => state.socket.socket);
+    const sender = useSelector((state) => state.user);
+    const receiver = useSelector((state) => state.currentChat);
+    const messages = useSelector((state) => state.message.messages)
     const [value, setValue] = useState('');
     // const [inputHeight, setInputHeight] = useState(38);
     const [loading, setLoading] = useState(true);
-    const [messages, setMessages] = useState([]);
-    useEffect(() =>{
-        socket.on('private_message', (msg, conversation) => {
-            console.log('new message');
-            if(msg.sender === route.params.email){
-                conversation.isOpened = true;
-                // callback({ok: true})
-                setMessages(prev => {
-                    const newMessages = [msg, ...prev]
-                    return newMessages;
-                })
-            }
-            // else{
-            //     callback({ok: false});
-            // }
-            dispatch(updateConversation(conversation))
-        })
-    },[]);
-    setTimeout(() => {
-        setLoading(false);
-    }, 500);
-    
+    const navigation = useNavigation();
     const showError = (err) => {
         Alert.alert(
             'Error',
@@ -49,57 +30,121 @@ const Inbox = () => {
             { cancelable: false }
         );
     }
-    async function getMessage(){
-        try{
-            let response = await fetch('http://localhost:5000/inbox', {
-                method: 'POST',
-                headers: {
-                    'Content-type': 'application/json'
-                },
-                body:JSON.stringify({
-                    person1: sender.email,
-                    person2: route.params.email
-                }),
-                credentials: 'include',
-            })
-            response = await response.json();
-            if(response.error){
-                showError(response.error);
-            }
-            else{
-                setMessages(response.messages);
-            }
-        }
-        catch(err){
-            console.log(err);
-            showError('An error occured. Please try again');
-        }
-    }
+    useEffect(() =>{
+        navigation.setOptions({
+            // title: receiver.name,
+            headerStyle: {
+                height: 100,
+            },
+            headerTitle: () => (
+                <TouchableOpacity style = {{flexDirection: 'row'}}>
+                    <View style={[styles.imgContainer, {height: 43, width: 43, marginRight: 8, marginLeft: -20 }]}>
+                        {/* <Image
+                        style={styles.image}
+                        source={{ uri: 'https://example.com/your-image.jpg' }}
+                    /> */}
+                    </View>
+                {/* <View> */}
+                    <Text style = {{fontSize: 21, color: 'black', marginTop: 8}}>{receiver.name}</Text>
+                    {/* <View style = {{flexDirection: 'row'}}>
+                        <Icon
+                            style = {{marginTop: 1}}
+                            name='arrow-forward'
+                            size={15}
+                            onPress={() => {
+                                console.log('Hello, World');
+                            }}
+
+                        />
+                        <Text style = {{fontSize: 16, marginLeft: 3, marginTop: -2}}>{receiver.room}</Text>
+                    </View> */}
+                {/* </View> */}
+                </TouchableOpacity>
+            ),
+            headerRight: () => (
+                <TouchableOpacity
+                    onPress={handlePress}
+                >
+                <Icon
+                    name='swap-horiz'
+                    size={27}
+                    color = 'black'
+                  // color='blue'
+                />
+                </TouchableOpacity>
+            ),
+        });
+    }, [receiver]);
+
+    setTimeout(() => {
+        setLoading(false);
+    }, 200);
+   
     useEffect(() => {
+        async function getMessage() {
+            if(!receiver.conversation_id){
+                dispatch(setMessages([]))
+                return;
+            }
+            try {
+                let response = await fetch('http://localhost:5000/inbox', {
+                    method: 'POST',
+                    headers: {
+                        'Content-type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        conversation_id: receiver.conversation_id,
+                        name: receiver.room
+                    }),
+                    credentials: 'include',
+                })
+                response = await response.json();
+                if (response.error) {
+                    showError(response.error);
+                }
+                else {
+                    dispatch(setMessages(response.messages));
+                }
+            }
+            catch (err) {
+                console.log(err);
+                showError('An error occured. Please try again');
+            }
+        }
         getMessage();
-    }, []);
-    const handleSend = () => {
-        if(value === '') return;
-        socket.emit('private_message', {
-            text: value,
-            sender: sender.email,
-            sender_name: sender.name,
-            receiver: route.params.email,
-            receiver_name: route.params.name,
-        }, (res) =>{
-            if(res.error){
-                showError(res.error)
-            }
-            else{
-                // console.log(res.conversation);
-                dispatch(updateConversation(res.conversation));
-            }
-        })
-        setMessages(prev => {
-            const newMessages = [{text: value, sender: sender.email, receiver: route.params.email, createdAt: Date.now()}, ...prev]
-            return newMessages;
-        })
-        setValue('');
+    }, [receiver]);
+    const handlePress = () =>{
+        if(receiver.conversation_id === ''){
+            showError('Start a conversation to switch room');
+        }
+        else{
+            navigation.navigate('Room');
+        }
+        // try{
+        //     let res = await fetch('http://localhost:5000/conversations/checkConversation',{
+        //         method: 'POST',
+        //         headers: {
+        //             'Content-type': 'application/json'
+        //         },
+        //         body: JSON.stringify({
+        //             sender: sender.email,
+        //             receiver: receiver.email
+        //         }),
+        //         credentials: 'include',
+        //     })
+        //     res = await res.json();
+        //     if(res.id){
+        //         let x = {...receiver};
+        //         x.conversation_id = res.id;
+        //         dispatch(setCurrentChat(x))
+        //         navigation.navigate('Room');
+        //     }
+        //     else showError(res.error)
+        // }
+        // catch(err){
+        //     console.log(err);
+        //     console.log('An error occured. Please try again')
+        // }
     }
     const renderItem = ({item}) =>{
         return(
@@ -147,6 +192,20 @@ const Inbox = () => {
             </View>
             :
             (<View style = {{backgroundColor: 'white', height: '100%'}}>
+                <View style={{ backgroundColor: '#ECF3F9', paddingTop: 5, paddingBottom: 5, flexDirection: 'row', justifyContent: 'center'}}>
+                    {receiver.room === '' ? 
+                    (<Text style = {{fontSize: 16}}>Start conversation</Text>)
+                    :
+                    (<>
+                        <Icon
+                            name='arrow-forward'
+                            size={20}
+                            color='black'
+                            style = {{marginTop: 1}}
+                        />
+                        <Text style = {{color: 'black', textAlign: 'center', fontSize: 18, fontWeight: 'bold'}}>{receiver.room}</Text>
+                    </>)}
+                </View>
                <View style={styles.allMessageContainer}>
                    <FlatList
                        data={messages}
@@ -163,13 +222,12 @@ const Inbox = () => {
                         onChangeText={(text)=>{setValue(text)}}
                         placeholder="Type your message..."
                     />
-                    <TouchableOpacity title="Send" onPress={handleSend}>
-                        <Icon
-                            name='send'
-                            size={27}
-                            color='blue'
-                        />
-                    </TouchableOpacity>
+                    <Icon
+                        name='send'
+                        size={27}
+                        color='blue'
+                        onPress={() => { handleSend(socket, dispatch, sender.email, receiver.email, sender.name, receiver.name, receiver.conversation_id, receiver.room, value); setValue('') }}
+                    />
                 </View>
             </View>)
     );
@@ -210,7 +268,7 @@ const styles = StyleSheet.create({
     allMessageContainer:{
         // height: '90%',
         marginTop: 10,
-        marginBottom: 60,
+        marginBottom: 90,
         backgroundColor: 'white',
         // borderBottomWidth: 1,
         

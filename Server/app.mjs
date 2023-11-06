@@ -10,6 +10,7 @@ import cors from 'cors'
 import { createServer } from 'http';
 // internal import
 import { Message } from './models/message.mjs';
+import { Conversation } from './models/conversation.mjs';
 import { notFoundHandler, errorHandler } from './middleware/common/errorHandler.mjs';
 import { loginRouter} from './router/loginRouter.mjs';
 import { usersRouter } from './router/usersRouter.mjs';
@@ -38,7 +39,7 @@ mongoose
     .catch(err => console.log(err));
 
 
-// await Message.deleteMany(
+// await Conversation.deleteMany(
 //     {},
 // )
 // io.on('connection', (socket) => {
@@ -70,7 +71,7 @@ io.on('connection', (socket) => {
 })
 
 // set view engine
-app.set('view engine', 'ejs'); 
+// app.set('view engine', 'ejs'); 
 
 //set static folder
 app.use(express.static(path.join(__dirname, 'public')));

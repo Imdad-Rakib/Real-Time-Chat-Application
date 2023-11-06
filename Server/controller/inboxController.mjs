@@ -1,12 +1,14 @@
 import { Message } from "../models/message.mjs";
-
+import { Room } from "../models/room.mjs";
 async function getMessage(req, res, next){
     try{
+        const {conversation_id, name} = req.body;
+        let room = await Room.findOne({
+            conversation_id,
+            name
+        })
         let messages = await Message.find({
-            $or:[
-                {sender: req.body.person1, receiver: req.body.person2},
-                {sender: req.body.person2, receiver: req.body.person1},
-            ]
+            room_id: room._id
         })
         .select('-_id sender receiver text createdAt')
         .sort({createdAt: -1});

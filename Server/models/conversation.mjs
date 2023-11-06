@@ -28,6 +28,9 @@ const conversationSchema = Schema(
         last_msg: {
             type: String,
         },
+        last_room:{
+            type: String,
+        },
         isOpened:{
             type: Boolean,
         }

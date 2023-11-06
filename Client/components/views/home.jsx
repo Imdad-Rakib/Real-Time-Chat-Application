@@ -2,17 +2,17 @@ import {View, FlatList, Alert, Text, StyleSheet, TouchableOpacity } from "react-
 import Icon from 'react-native-vector-icons/MaterialIcons'
 import moment from "moment";
 import {useState, useEffect} from 'react'
-import SearchUser from "./searchUser";
+import SearchUser from "./search";
 import { useDispatch, useSelector } from "react-redux";
 import { timestamp } from "../../utilities/timestamp.mjs";
 import { setConversation, updateConversation, updateConversationStatus } from "../../store/slices/conversationSlice.mjs";
+import { setCurrentChat } from "../../store/slices/currentChatSlice.mjs";
 
 const Home = ({navigation}) =>{
     
     const dispatch = useDispatch();
     const conversation = useSelector((state) => state.conversation)
     const user = useSelector((state) => state.user);
-    const socket = useSelector((state) => state.socket.socket);
 
     const showError = (err) => {
         Alert.alert(
@@ -26,12 +26,6 @@ const Home = ({navigation}) =>{
             { cancelable: false }
         );
     }
-    useEffect(() => {
-        socket.on('private_message', (msg, conversation) => {
-            // callback('ok');
-            dispatch(updateConversation(conversation))
-        })
-    }, []);
     useEffect(()=>{
         async function getConversations(){
             try {
@@ -44,14 +38,12 @@ const Home = ({navigation}) =>{
                         body: JSON.stringify({email: user.email }),
                         credentials: 'include'
                     })
-
                 response = await response.json();
                 if (response.error) {
                     showError(response.error)
                 }
                 else {
                     dispatch(setConversation(response.conversations))
-                    // setConversations(response.conversations);
                 }
             }
             catch (err) {
@@ -71,7 +63,9 @@ const Home = ({navigation}) =>{
             name = item.creator_name
             email = item.creator
         }
+        dispatch(setCurrentChat({ name, email, room: item.last_room, conversation_id: item._id }));
         if(item.updated_by !== user.email && !item.isOpened){
+            console.log('ok');
             try {
                 let response = await fetch('http://localhost:5000/conversations/modify', {
                     method: 'POST',
@@ -92,7 +86,7 @@ const Home = ({navigation}) =>{
                 else {
                     console.log('okay');
                     dispatch(updateConversationStatus({creator: item.creator, participant: item.participant}))
-                    navigation.navigate('Inbox', { name, email });
+                    navigation.navigate('Inbox');
                 }
             }
             catch (err) {
@@ -100,7 +94,7 @@ const Home = ({navigation}) =>{
                 showError('An error occured. Please try again');
             }
         }
-        navigation.navigate('Inbox', { name, email });
+        navigation.navigate('Inbox');
     }
     const renderItem = ({ item }) => {
         let name, email;
