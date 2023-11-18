@@ -38,8 +38,8 @@ async function removeClient(connectionId){
     }
 }
 async function handlePrivateMsg(message){    
+    console.log(message);
     try{
-        
         const {text, sender, conversation_id, sender_name, receiver_name, receiver, room_name} = message;
         let conversation = await Conversation.findOne({
             $or: [

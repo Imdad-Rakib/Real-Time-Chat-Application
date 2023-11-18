@@ -12,6 +12,7 @@ function handleSocketConnections(socket){
     })
     socket.on('private_message', async (payload, callback)=>{
         let res = await handlePrivateMsg(payload);
+        // console.log(payload.msg.files);
         callback(res);
     })
 }

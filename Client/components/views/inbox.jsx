@@ -1,7 +1,8 @@
-import React, {useState, useEffect, useRef} from 'react';
-import {ActivityIndicator, Alert, Button, View, Text, StyleSheet, TextInput, FlatList, TouchableOpacity, ImageComponent } from 'react-native';
+import React, {useState, useEffect, useCallback} from 'react';
+import {ActivityIndicator, Alert, Button, View, Text, StyleSheet, TextInput, FlatList, TouchableOpacity, ImageComponent, Keyboard, Animated, Easing } from 'react-native';
 import { useSelector } from 'react-redux';
 import { useDispatch} from 'react-redux';
+import DocumentPicker, {types} from 'react-native-document-picker'
 import { setMessages } from '../../store/slices/messageSlice.mjs';
 import { setCurrentChat } from '../../store/slices/currentChatSlice.mjs';
 import Icon from 'react-native-vector-icons/MaterialIcons'
@@ -10,10 +11,12 @@ import { handleSend } from '../../Socket/index.mjs';
 
 const Inbox = () => {
     const dispatch = useDispatch();
+    // const animatedWidth = useRef(new Animated.Value(100)).current;
     const socket = useSelector((state) => state.socket.socket);
     const sender = useSelector((state) => state.user);
     const receiver = useSelector((state) => state.currentChat);
     const messages = useSelector((state) => state.message.messages)
+    // const [isKeyboardActive, setIsKeyboardActive] = useState(false);
     const [value, setValue] = useState('');
     // const [inputHeight, setInputHeight] = useState(38);
     const [loading, setLoading] = useState(true);
@@ -30,15 +33,42 @@ const Inbox = () => {
             { cancelable: false }
         );
     }
+
+    // useEffect(() => {
+    //     const keyboardDidShowListener = Keyboard.addListener('keyboardDidShow', () => {
+    //         setIsKeyboardActive(true);
+    //         Animated.timing(animatedWidth, {
+    //             toValue: '80%', // Final width
+    //             duration: 1000, // Animation duration in milliseconds
+    //             easing: Easing.linear, // You can choose different easing functions
+    //         }).start();
+    //         // Keyboard is shown, trigger the animation
+    //         // increaseWidthWithAnimation();
+    //     });
+
+    //     const keyboardDidHideListener = Keyboard.addListener('keyboardDidHide', () => {
+    //         setIsKeyboardActive(false);
+
+    //         // Keyboard is hidden, you can reset the width or apply any other animation
+    //         // animatedWidth.setValue(100); // Reset width to the initial value
+
+    //     });
+
+    //     return () => {
+    //         keyboardDidShowListener.remove();
+    //         keyboardDidHideListener.remove();
+    //     };
+    // }, []);
+
     useEffect(() =>{
         navigation.setOptions({
             // title: receiver.name,
-            headerStyle: {
-                height: 100,
-            },
+            // headerStyle: {
+            //     height: 100,
+            // },
             headerTitle: () => (
                 <TouchableOpacity style = {{flexDirection: 'row'}}>
-                    <View style={[styles.imgContainer, {height: 43, width: 43, marginRight: 8, marginLeft: -20 }]}>
+                    <View style={[styles.imgContainer, {height: 42, width: 42, marginRight: 8, marginLeft: -20 }]}>
                         {/* <Image
                         style={styles.image}
                         source={{ uri: 'https://example.com/your-image.jpg' }}
@@ -68,7 +98,7 @@ const Inbox = () => {
                 <Icon
                     name='swap-horiz'
                     size={27}
-                    color = 'black'
+                        color= '#0055cc'
                   // color='blue'
                 />
                 </TouchableOpacity>
@@ -120,32 +150,56 @@ const Inbox = () => {
         else{
             navigation.navigate('Room');
         }
-        // try{
-        //     let res = await fetch('http://localhost:5000/conversations/checkConversation',{
-        //         method: 'POST',
-        //         headers: {
-        //             'Content-type': 'application/json'
-        //         },
-        //         body: JSON.stringify({
-        //             sender: sender.email,
-        //             receiver: receiver.email
-        //         }),
-        //         credentials: 'include',
-        //     })
-        //     res = await res.json();
-        //     if(res.id){
-        //         let x = {...receiver};
-        //         x.conversation_id = res.id;
-        //         dispatch(setCurrentChat(x))
-        //         navigation.navigate('Room');
-        //     }
-        //     else showError(res.error)
-        // }
-        // catch(err){
-        //     console.log(err);
-        //     console.log('An error occured. Please try again')
-        // }
     }
+    /*const handleSend = async () =>{
+        try {
+            let response = fetch(url, {
+                method: 'POST',
+                headers: {
+                    'Content-type': 'application/json'
+                },
+                body: JSON.stringify({
+                    conversation_id: receiver.conversation_id,
+                    name: receiver.room
+                }),
+                credentials: 'include',
+            })
+            response = await response.json();
+            if (response.error) {
+                showError(response.error);
+            }
+            else {
+                dispatch(setMessages(response.messages));
+            }
+        }
+        catch (err) {
+            console.log(err);
+            showError('An error occured. Please try again');
+        }
+    }*/
+    const selectFile = useCallback(async () => {
+        try {
+            const response = await DocumentPicker.pick({
+                presentationStyle: 'formSheet',
+                type: ['*/*'],
+                allowMultiSelection: true,
+            });
+            console.log(response);
+            const files = response.map(file => ({
+                uri: file.uri,
+                type: file.type,
+                name: file.name,
+            }));
+            const formData = new FormData();
+            files.forEach((file, index) => {
+                formData.append(`file${index}`, file);
+            });
+            handleSend();
+            // setFileResponse(response);
+        } catch (err) {
+            console.log(err);
+        }
+    }, []);
     const renderItem = ({item}) =>{
         return(
             <View style = {{flexDirection: item.sender !== sender.email ? 'row': ''}}>
@@ -192,18 +246,18 @@ const Inbox = () => {
             </View>
             :
             (<View style = {{backgroundColor: 'white', height: '100%'}}>
-                <View style={{ backgroundColor: '#ECF3F9', paddingTop: 5, paddingBottom: 5, flexDirection: 'row', justifyContent: 'center'}}>
+                <View style={{ backgroundColor: '#7F00FF', paddingTop: 1, paddingBottom: 1, flexDirection: 'row', justifyContent: 'center'}}>
                     {receiver.room === '' ? 
-                    (<Text style = {{fontSize: 16}}>Start conversation</Text>)
+                    (<Text style = {{fontSize: 16, color: 'white'}}>Start conversation</Text>)
                     :
                     (<>
                         <Icon
                             name='arrow-forward'
-                            size={20}
+                            size={18}
                             color='black'
-                            style = {{marginTop: 1}}
+                            style = {{marginTop: 1, color: 'white'}}
                         />
-                        <Text style = {{color: 'black', textAlign: 'center', fontSize: 18, fontWeight: 'bold'}}>{receiver.room}</Text>
+                        <Text style = {{color: 'white', textAlign: 'center', fontSize: 16, fontWeight: 'bold'}}>{receiver.room}</Text>
                     </>)}
                 </View>
                <View style={styles.allMessageContainer}>
@@ -215,19 +269,39 @@ const Inbox = () => {
                    />
                </View>
                 <View style={styles.messageOptions}>
+                    <TouchableOpacity
+                        onPress={selectFile}
+                    >
+                    <Icon
+                        name = 'attachment'
+                        size = {27}
+                        style={{ transform: [{ rotate: '-45deg' }], color: '#0055cc'}}
+                    />
+                    </TouchableOpacity>
+                    <TouchableOpacity>
+                    <Icon
+                        name = 'photo'
+                        size = {27}
+                        style={{ color: '#0055cc', marginLeft: 5}}
+                    />
+                    </TouchableOpacity>
                     <TextInput
                         style={styles.input}
                         multiline = {true}
                         value={value}
                         onChangeText={(text)=>{setValue(text)}}
-                        placeholder="Type your message..."
+                        placeholder="Type your message"
                     />
+                    <TouchableOpacity
+                        onPress={() => { handleSend(socket, dispatch, sender.email, receiver.email, sender.name, receiver.name, receiver.conversation_id, receiver.room, value); setValue('') }}
+                    >
+
                     <Icon
                         name='send'
                         size={27}
-                        color='blue'
-                        onPress={() => { handleSend(socket, dispatch, sender.email, receiver.email, sender.name, receiver.name, receiver.conversation_id, receiver.room, value); setValue('') }}
+                        color='#0055cc'
                     />
+                    </TouchableOpacity>
                 </View>
             </View>)
     );
@@ -257,13 +331,14 @@ const styles = StyleSheet.create({
         
     },
     input: {
-        width: '80%',
+        width: '70%',
         backgroundColor: '#f5f5f5',
         borderRadius: 19,
         marginRight: 10,
+        marginLeft: 10,
         fontSize: 15,
         paddingLeft: 20,
-        height: 40,
+        height: 35,
     },
     allMessageContainer:{
         // height: '90%',

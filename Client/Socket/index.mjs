@@ -28,7 +28,7 @@ const socketConfiguration = (email, dispatch) => {
   })
 }
 
-const handleSend = (socket, dispatch, sender,  receiver, sender_name, receiver_name, conversation_id, room_name, text) => {
+const handleSend = (socket, dispatch, sender, receiver, sender_name, receiver_name, conversation_id, room_name, text) => {
   if (text === '') {
     return;
   }
@@ -45,7 +45,6 @@ const handleSend = (socket, dispatch, sender,  receiver, sender_name, receiver_n
       console.log(res.error)
     }
     else {
-      
       let x = {...store.getState().currentChat}
       if (x.conversation_id === ''){
         x.conversation_id = res.conversation._id;

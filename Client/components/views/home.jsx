@@ -1,4 +1,4 @@
-import {View, FlatList, Alert, Text, StyleSheet, TouchableOpacity } from "react-native";
+import {View, FlatList, Alert, Text, StyleSheet, TouchableOpacity, Image } from "react-native";
 import Icon from 'react-native-vector-icons/MaterialIcons'
 import moment from "moment";
 import {useState, useEffect} from 'react'
@@ -122,10 +122,10 @@ const Home = ({navigation}) =>{
                 onPress = {() => handlePress(item)}
             >
                 <View style={styles.imgContainer }>
-                    {/* <Image
+                    <Image
                         style={styles.image}
-                        source={{ uri: 'https://example.com/your-image.jpg' }}
-                    /> */}
+                        source={require('../../assets/user1.png' )}
+                    />
                 </View>
                 <View style = {{marginLeft: 15}}>
                     <Text style={{
@@ -191,12 +191,16 @@ const styles = StyleSheet.create({
         alignItems: 'center',
     },
     imgContainer:{
-        width: 57, 
-        height: 57, 
+        width: 55, 
+        height: 55, 
         borderRadius: 50, 
         overflow: 'hidden', 
-        backgroundColor: '#ebebeb',
+        // backgroundColor: '#ebebeb',
         marginLeft: 12,
     },
+    image:{
+        width: 55,
+        height: 55,
+    }
 });
 export default Home;

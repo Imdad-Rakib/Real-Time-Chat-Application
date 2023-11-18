@@ -186,11 +186,11 @@ const styles = StyleSheet.create({
         alignItems: 'center',
     },
     container: {
+        backgroundColor: 'white',
         flex: 1,
         justifyContent: 'center',
         alignItems: 'center',
         padding: 20,
-        backgroundColor: '#f0f0f0',
     },
     heading: {
         fontSize: 28,

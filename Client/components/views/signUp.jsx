@@ -146,9 +146,11 @@ const styles = StyleSheet.create({
         flex: 1,
         justifyContent: 'center',
         padding: 20,
+        backgroundColor: 'white'
     },
     heading: {
         fontSize: 24,
+        fontWeight: 'bold',
         marginBottom: 20,
         textAlign: 'center',
     },
