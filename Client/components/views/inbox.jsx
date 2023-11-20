@@ -3,11 +3,12 @@ import {ActivityIndicator, Alert, Button, View, Text, StyleSheet, TextInput, Fla
 import { useSelector } from 'react-redux';
 import { useDispatch} from 'react-redux';
 import DocumentPicker, {types} from 'react-native-document-picker'
-import { setMessages } from '../../store/slices/messageSlice.mjs';
+import { setMessages, addMessage } from '../../store/slices/messageSlice.mjs';
+import store from '../../store/index.mjs';
 import { setCurrentChat } from '../../store/slices/currentChatSlice.mjs';
 import Icon from 'react-native-vector-icons/MaterialIcons'
 import { useNavigation } from "@react-navigation/native";
-import { handleSend } from '../../Socket/index.mjs';
+// import { handleSend } from '../../Socket/index.mjs';
 
 const Inbox = () => {
     const dispatch = useDispatch();
@@ -18,6 +19,7 @@ const Inbox = () => {
     const messages = useSelector((state) => state.message.messages)
     // const [isKeyboardActive, setIsKeyboardActive] = useState(false);
     const [value, setValue] = useState('');
+    const [files, setFiles] = useState([]);
     // const [inputHeight, setInputHeight] = useState(38);
     const [loading, setLoading] = useState(true);
     const navigation = useNavigation();
@@ -151,55 +153,111 @@ const Inbox = () => {
             navigation.navigate('Room');
         }
     }
-    /*const handleSend = async () =>{
-        try {
-            let response = fetch(url, {
-                method: 'POST',
-                headers: {
-                    'Content-type': 'application/json'
-                },
-                body: JSON.stringify({
-                    conversation_id: receiver.conversation_id,
-                    name: receiver.room
-                }),
-                credentials: 'include',
-            })
-            response = await response.json();
-            if (response.error) {
-                showError(response.error);
+    /*
+         if (text === '') {
+    return;
+  }
+  socket.emit('private_message', {
+    text,
+    conversation_id,
+    sender,
+    receiver,
+    sender_name,
+    receiver_name,
+    room_name,
+  }, (res) => {
+    if (res.error){
+      console.log(res.error)
+    }
+    else {
+      let x = {...store.getState().currentChat}
+      if (x.conversation_id === ''){
+        x.conversation_id = res.conversation._id;
+        x.room = res.conversation.last_room;
+        dispatch(setCurrentChat(x));
+      }
+      // console.log(res.conversation);
+      // dispatch(setCurrentChat(x));
+      dispatch(addMessage(res.msg))
+      dispatch(updateConversation(res.conversation));
+    }
+  })
+
+  handleSend(socket, dispatch, sender.email, receiver.email, sender.name, receiver.name, receiver.conversation_id, receiver.room, value)
+     */
+    useEffect(() =>{
+        const handleSend = async () => {
+            // console.log('files ', files);
+            if(value === '' && !files.length) return;
+            if(files.length > 3) {
+                showError('Maximum 3 files can be sent at a time');
+                return;
             }
-            else {
-                dispatch(setMessages(response.messages));
+            const formData = new FormData();
+            files.forEach((file, index) => {
+                formData.append(`file${index + 1}`, file);
+            });
+            formData.append('text', value)
+            formData.append('sender', sender.email)
+            formData.append('receiver', receiver.email)
+            formData.append('sender_name', sender.name)
+            formData.append('receiver_name', receiver.name)
+            formData.append('conversation_id', receiver.conversation_id)
+            formData.append('room_name', receiver.room);
+            console.log(formData);
+            try {
+                let res = await fetch('http://localhost:5000/inbox/privateMessage', {
+                    method: 'POST',
+                    body: formData,
+                    headers: {
+                        'Content-Type': 'multipart/form-data',
+                        // 'Content-Type': 'application/json',
+                    },
+                    credentials: 'include',
+                })
+                res = await res.json();
+                if (res.error) {
+                    showError(res.error);
+                }
+                else {
+                    console.log(res);
+    
+                    // let x = { ...store.getState().currentChat }
+                    // if (x.conversation_id === '') {
+                    //     x.conversation_id = res.conversation._id;
+                    //     x.room = res.conversation.last_room;
+                    //     dispatch(setCurrentChat(x));
+                    // }
+                    // dispatch(addMessage(res.msg))
+                    // dispatch(updateConversation(res.conversation));
+                }
+            }
+            catch (err) {
+                console.log(err);
+                showError('An error occured. Please try again');
             }
         }
-        catch (err) {
-            console.log(err);
-            showError('An error occured. Please try again');
-        }
-    }*/
-    const selectFile = useCallback(async () => {
+
+        handleSend();
+    }, [files]);
+    const selectFile = async () => {
         try {
             const response = await DocumentPicker.pick({
                 presentationStyle: 'formSheet',
                 type: ['*/*'],
                 allowMultiSelection: true,
+                // numberOfFiles: 3,
             });
-            console.log(response);
-            const files = response.map(file => ({
-                uri: file.uri,
-                type: file.type,
-                name: file.name,
-            }));
-            const formData = new FormData();
-            files.forEach((file, index) => {
-                formData.append(`file${index}`, file);
-            });
-            handleSend();
+            setFiles(() => {
+                let newFiles = [...response];
+                return newFiles;
+            })
+            // handleSend(response);
             // setFileResponse(response);
         } catch (err) {
             console.log(err);
         }
-    }, []);
+    };
     const renderItem = ({item}) =>{
         return(
             <View style = {{flexDirection: item.sender !== sender.email ? 'row': ''}}>
@@ -293,7 +351,7 @@ const Inbox = () => {
                         placeholder="Type your message"
                     />
                     <TouchableOpacity
-                        onPress={() => { handleSend(socket, dispatch, sender.email, receiver.email, sender.name, receiver.name, receiver.conversation_id, receiver.room, value); setValue('') }}
+                        onPress={() => { handleSend(); setValue('') }}
                     >
 
                     <Icon

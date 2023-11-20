@@ -3,8 +3,8 @@ import cookieParser from 'cookie-parser';
 import dotenv from 'dotenv';
 import express from 'express';
 import mongoose from 'mongoose';
-import path from 'path';
 import { Server } from 'socket.io';
+import path from 'path';
 import { fileURLToPath } from 'url';
 import cors from 'cors'
 import { createServer } from 'http';

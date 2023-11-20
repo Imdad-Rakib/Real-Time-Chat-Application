@@ -4,7 +4,7 @@ import express from "express";
 // internal imports
 // import { getUsers } from "../controller/usersController.mjs";
 import { decorateHtmlResponse } from "../middleware/common/decorateHtmlResponse.mjs";
-import avatarUpload from "../middleware/users/avatarUpload.mjs";
+import fileUpload from "../middleware/users/fileUpload.mjs";
 import {addUserValidators, addUserValidationHandler} from "../middleware/users/userValidator.mjs";
 import { addUser, getUsers, removeUser, checkEmail, processEmail, passwordRecovery,  updatePassword, verifyPassOtp, searchUser } from "../controller/usersController.mjs";
 import { checkLogin } from "../middleware/common/checkLogin.mjs";
