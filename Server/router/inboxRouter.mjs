@@ -4,8 +4,7 @@ import multer from "multer";
 import path from 'path';
 import { fileURLToPath } from 'url';
 // internal imports
-import {getMessage} from '../controller/inboxController.mjs'
-import { handlePrivateMsg } from "../controller/inboxController.mjs";
+import {getMessage, handlePrivateMsg, singleDownloader} from '../controller/inboxController.mjs'
 import fileUpload from "../middleware/users/fileUpload.mjs";
 
 const inboxRouter = express.Router();
@@ -15,6 +14,12 @@ const inboxRouter = express.Router();
 
 inboxRouter.post('/', getMessage);
 inboxRouter.post('/privateMessage', fileUpload, handlePrivateMsg)
+inboxRouter.get('/download/:fileName', singleDownloader);
 
 export { inboxRouter }
 
+/*
+app.get('/download', function (req, res) {
+   
+})
+*/

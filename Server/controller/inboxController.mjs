@@ -2,6 +2,15 @@ import { Message } from "../models/message.mjs";
 import { Room } from "../models/room.mjs";
 import { Conversation } from "../models/conversation.mjs";
 import { io } from "../app.mjs";
+
+//external
+import path from 'path';
+import { fileURLToPath } from 'url';
+
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+
 async function getMessage(req, res, next){
     try{
         const {conversation_id, name} = req.body;
@@ -123,4 +132,19 @@ async function handlePrivateMsg(req, res, next) {
     // }
 }
 
-export {getMessage, handlePrivateMsg}
+async function singleDownloader(req, res, next){
+    // console.log('single file');
+    const folderPath = path.join(__dirname, '../public/uploads/files/');
+    console.log('folderPath: ', folderPath);
+    // Download function provided by express
+    res.download(folderPath + req.params.fileName, function (err) {
+        if (err) {
+            console.log(err);
+            res.json({
+                error: 'Internal server error'
+            })
+        }
+    })
+}
+
+export {getMessage, handlePrivateMsg, singleDownloader}

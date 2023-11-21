@@ -17,6 +17,8 @@ import Inbox from "./components/views/inbox";
 import { io } from 'socket.io-client';
 
 
+import MyButtonPage from "./components/controllers/test";
+
 const Stack = createNativeStackNavigator();
 
 
@@ -27,7 +29,9 @@ export default function App() {
     // <SearchUser/>
     <Provider store = {store}>
       <NavigationContainer>
-        <Stack.Navigator initialRouteName="Login">
+        <Stack.Navigator initialRouteName="test">
+          
+          <Stack.Screen name='test' component={MyButtonPage} />
           <Stack.Screen name='Chats' component={Home} />
           <Stack.Screen name = "Search" component={SearchUser} options={{headerShown: false}}/>
           <Stack.Screen name="Inbox" component={Inbox} />

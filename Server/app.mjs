@@ -82,6 +82,8 @@ app.use(express.static(path.join(__dirname, 'public')));
 app.use(cookieParser(process.env.COOKIE_SECRET));
 
 //routing setup
+
+
 app.use('/', loginRouter);
 app.use('/conversations', conversationsRouter);
 app.use('/users', usersRouter);
