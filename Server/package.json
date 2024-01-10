@@ -6,7 +6,7 @@
   "main": "index.js",
   "scripts": {
     "start": "SET \"NODE_ENV=development\" && nodemon app.mjs",
-    "production": "SET \"NODE_ENV=production\" && node index.mjs",
+    "production": "SET \"NODE_ENV=production\" && node app.mjs",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "repository": {

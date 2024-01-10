@@ -29,7 +29,7 @@ export default function App() {
     // <SearchUser/>
     <Provider store = {store}>
       <NavigationContainer>
-        <Stack.Navigator initialRouteName="test">
+        <Stack.Navigator initialRouteName="Login">
           
           <Stack.Screen name='test' component={MyButtonPage} />
           <Stack.Screen name='Chats' component={Home} />

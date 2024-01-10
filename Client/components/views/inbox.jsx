@@ -1,5 +1,5 @@
 import React, {useState, useEffect, useCallback} from 'react';
-import {ActivityIndicator, Alert, Button, View, Text, StyleSheet, TextInput, FlatList, TouchableOpacity, ImageComponent, Keyboard, Animated, Easing } from 'react-native';
+import {Image, ActivityIndicator, Alert, Button, View, Text, StyleSheet, TextInput, FlatList, TouchableOpacity, ImageComponent, Keyboard, Animated, Easing, PermissionsAndroid, Platform, TouchableWithoutFeedback, Radio } from 'react-native';
 import { useSelector } from 'react-redux';
 import { useDispatch} from 'react-redux';
 import DocumentPicker, {types} from 'react-native-document-picker'
@@ -7,21 +7,24 @@ import { setMessages, addMessage } from '../../store/slices/messageSlice.mjs';
 import store from '../../store/index.mjs';
 import { setCurrentChat } from '../../store/slices/currentChatSlice.mjs';
 import Icon from 'react-native-vector-icons/MaterialIcons'
+import { FontAwesomeIcon } from '@fortawesome/react-native-fontawesome';
+import { faFile, faFilePdf, faFileText, faPlateWheat } from '@fortawesome/free-solid-svg-icons';
+import RNFetchBlob from 'rn-fetch-blob';
+import Modal from "react-native-modal";
+
 import { useNavigation } from "@react-navigation/native";
-// import { handleSend } from '../../Socket/index.mjs';
+import { updateConversation } from '../../store/slices/conversationSlice.mjs';
 
 const Inbox = () => {
     const dispatch = useDispatch();
-    // const animatedWidth = useRef(new Animated.Value(100)).current;
     const socket = useSelector((state) => state.socket.socket);
     const sender = useSelector((state) => state.user);
     const receiver = useSelector((state) => state.currentChat);
     const messages = useSelector((state) => state.message.messages)
-    // const [isKeyboardActive, setIsKeyboardActive] = useState(false);
     const [value, setValue] = useState('');
     const [files, setFiles] = useState([]);
-    // const [inputHeight, setInputHeight] = useState(38);
     const [loading, setLoading] = useState(true);
+    const [isVisible, setIsVisible] = useState(false);
     const navigation = useNavigation();
     const showError = (err) => {
         Alert.alert(
@@ -36,61 +39,21 @@ const Inbox = () => {
         );
     }
 
-    // useEffect(() => {
-    //     const keyboardDidShowListener = Keyboard.addListener('keyboardDidShow', () => {
-    //         setIsKeyboardActive(true);
-    //         Animated.timing(animatedWidth, {
-    //             toValue: '80%', // Final width
-    //             duration: 1000, // Animation duration in milliseconds
-    //             easing: Easing.linear, // You can choose different easing functions
-    //         }).start();
-    //         // Keyboard is shown, trigger the animation
-    //         // increaseWidthWithAnimation();
-    //     });
-
-    //     const keyboardDidHideListener = Keyboard.addListener('keyboardDidHide', () => {
-    //         setIsKeyboardActive(false);
-
-    //         // Keyboard is hidden, you can reset the width or apply any other animation
-    //         // animatedWidth.setValue(100); // Reset width to the initial value
-
-    //     });
-
-    //     return () => {
-    //         keyboardDidShowListener.remove();
-    //         keyboardDidHideListener.remove();
-    //     };
-    // }, []);
-
     useEffect(() =>{
         navigation.setOptions({
-            // title: receiver.name,
-            // headerStyle: {
-            //     height: 100,
-            // },
             headerTitle: () => (
                 <TouchableOpacity style = {{flexDirection: 'row'}}>
-                    <View style={[styles.imgContainer, {height: 42, width: 42, marginRight: 8, marginLeft: -20 }]}>
-                        {/* <Image
-                        style={styles.image}
-                        source={{ uri: 'https://example.com/your-image.jpg' }}
-                    /> */}
+                    <View style={[styles.imgContainer, {height: 42, width: 42,  marginRight: 8, marginLeft: -20 }]}>
+                    <Image
+                        style={{height: 42, width: 42}}
+                            source={{
+                                uri: `http://localhost:5000/getImage/${encodeURIComponent(receiver.email)}` }}
+                    />
                     </View>
-                {/* <View> */}
-                    <Text style = {{fontSize: 21, color: 'black', marginTop: 8}}>{receiver.name}</Text>
-                    {/* <View style = {{flexDirection: 'row'}}>
-                        <Icon
-                            style = {{marginTop: 1}}
-                            name='arrow-forward'
-                            size={15}
-                            onPress={() => {
-                                console.log('Hello, World');
-                            }}
+                    <View style={{ backgroundColor: 'green', width: 16, height: 16, position: 'absolute', borderRadius: 50, borderColor: 'white', borderWidth: 3.5, left: 12, top: 22 }}>
 
-                        />
-                        <Text style = {{fontSize: 16, marginLeft: 3, marginTop: -2}}>{receiver.room}</Text>
-                    </View> */}
-                {/* </View> */}
+                    </View>
+                    <Text style = {{fontSize: 21, color: 'black', marginTop: 8}}>{receiver.name}</Text>
                 </TouchableOpacity>
             ),
             headerRight: () => (
@@ -101,7 +64,6 @@ const Inbox = () => {
                     name='swap-horiz'
                     size={27}
                         color= '#0055cc'
-                  // color='blue'
                 />
                 </TouchableOpacity>
             ),
@@ -145,6 +107,7 @@ const Inbox = () => {
         }
         getMessage();
     }, [receiver]);
+    
     const handlePress = () =>{
         if(receiver.conversation_id === ''){
             showError('Start a conversation to switch room');
@@ -153,148 +116,212 @@ const Inbox = () => {
             navigation.navigate('Room');
         }
     }
-    /*
-         if (text === '') {
-    return;
-  }
-  socket.emit('private_message', {
-    text,
-    conversation_id,
-    sender,
-    receiver,
-    sender_name,
-    receiver_name,
-    room_name,
-  }, (res) => {
-    if (res.error){
-      console.log(res.error)
-    }
-    else {
-      let x = {...store.getState().currentChat}
-      if (x.conversation_id === ''){
-        x.conversation_id = res.conversation._id;
-        x.room = res.conversation.last_room;
-        dispatch(setCurrentChat(x));
-      }
-      // console.log(res.conversation);
-      // dispatch(setCurrentChat(x));
-      dispatch(addMessage(res.msg))
-      dispatch(updateConversation(res.conversation));
-    }
-  })
-
-  handleSend(socket, dispatch, sender.email, receiver.email, sender.name, receiver.name, receiver.conversation_id, receiver.room, value)
-     */
-    useEffect(() =>{
-        const handleSend = async () => {
-            // console.log('files ', files);
-            if(value === '' && !files.length) return;
-            if(files.length > 3) {
+    
+    const handleSend = async (files) => {
+        if(value === '' && !files) return;
+        const formData = new FormData();
+        if(files) {
+            if(files.length > 3){
                 showError('Maximum 3 files can be sent at a time');
                 return;
             }
-            const formData = new FormData();
-            files.forEach((file, index) => {
-                formData.append(`file${index + 1}`, file);
-            });
-            formData.append('text', value)
-            formData.append('sender', sender.email)
-            formData.append('receiver', receiver.email)
-            formData.append('sender_name', sender.name)
-            formData.append('receiver_name', receiver.name)
-            formData.append('conversation_id', receiver.conversation_id)
-            formData.append('room_name', receiver.room);
-            console.log(formData);
-            try {
-                let res = await fetch('http://localhost:5000/inbox/privateMessage', {
-                    method: 'POST',
-                    body: formData,
-                    headers: {
-                        'Content-Type': 'multipart/form-data',
-                        // 'Content-Type': 'application/json',
-                    },
-                    credentials: 'include',
-                })
-                res = await res.json();
-                if (res.error) {
-                    showError(res.error);
-                }
-                else {
-                    console.log(res);
-    
-                    // let x = { ...store.getState().currentChat }
-                    // if (x.conversation_id === '') {
-                    //     x.conversation_id = res.conversation._id;
-                    //     x.room = res.conversation.last_room;
-                    //     dispatch(setCurrentChat(x));
-                    // }
-                    // dispatch(addMessage(res.msg))
-                    // dispatch(updateConversation(res.conversation));
-                }
-            }
-            catch (err) {
-                console.log(err);
-                showError('An error occured. Please try again');
+            else{
+                files.forEach((file, index) => {
+                    formData.append(`file${index + 1}`, file);
+                });
             }
         }
-
-        handleSend();
-    }, [files]);
+        formData.append('text', value)
+        formData.append('sender', sender.email)
+        formData.append('receiver', receiver.email)
+        formData.append('sender_name', sender.name)
+        formData.append('receiver_name', receiver.name)
+        formData.append('conversation_id', receiver.conversation_id)
+        formData.append('room_name', receiver.room);
+        try {
+            let res = await fetch('http://localhost:5000/inbox/privateMessage', {
+                method: 'POST',
+                body: formData,
+                headers: {
+                    'Content-Type': 'multipart/form-data',
+                },
+                credentials: 'include',
+            })
+            res = await res.json();
+            if (res.error) {
+                showError(res.error);
+            }
+            else {
+                let x = { ...store.getState().currentChat }
+                if (x.conversation_id === '') {
+                    x.conversation_id = res.conversation._id;
+                    x.room = res.conversation.last_room;
+                    dispatch(setCurrentChat(x));
+                }
+                dispatch(addMessage({sender: sender.email, text: value, file: res.file}));
+                dispatch(updateConversation(res.conversation));
+            }
+        }
+        catch (err) {
+            console.log(err);
+            showError('An error occured. Please try again');
+        }
+    }
     const selectFile = async () => {
         try {
             const response = await DocumentPicker.pick({
                 presentationStyle: 'formSheet',
                 type: ['*/*'],
-                allowMultiSelection: true,
-                // numberOfFiles: 3,
+                allowMultiSelection: false,
             });
-            setFiles(() => {
-                let newFiles = [...response];
-                return newFiles;
-            })
-            // handleSend(response);
-            // setFileResponse(response);
+            handleSend(response);
         } catch (err) {
             console.log(err);
         }
     };
+    const trimmedFileName = (file) => {
+        let i = file.name.length;
+        while (i > 0) {
+            if (file.name[i] === '-') {
+                break;
+            }
+            i--;
+        }
+        return file.name.substring(0, i) + file.extname;
+    }
+    const downloadFile = (file) => {
+        
+        const { config, fs } = RNFetchBlob;
+        const fileDir = fs.dirs.DownloadDir;
+        const name = trimmedFileName(file);
+        console.log(name);
+        config({
+            fileCache: true,
+            addAndroidDownloads: {
+                useDownloadManager: true,
+                notification: true,
+                path:
+                    fileDir +
+                    '/' +
+                    name,
+                description: 'file download',
+            },
+        })
+            .fetch('GET', `http://localhost:5000/inbox/download/${file.name}`)
+            .then(res => {
+                Alert.alert(
+                    'Download',
+                    'File downloaded successfully',
+                    [
+                        {
+                            text: 'OK',
+                        },
+                    ],
+                    { cancelable: false }
+                );
+            });
+    };
+
+    const requestPermission = async (file) => {
+        console.log(Platform.constants.Release);
+        if(Platform.constants.Release !== '13'){  
+            try {
+                const granted = await PermissionsAndroid.request(
+                    PermissionsAndroid.PERMISSIONS.WRITE_EXTERNAL_STORAGE,
+                    {
+                        title: 'Storage Permission',
+                        message:'',
+                        buttonNeutral: 'Ask Me Later',
+                        buttonNegative: 'Cancel',
+                        buttonPositive: 'OK',
+                    },
+                );
+                if (granted !== PermissionsAndroid.RESULTS.GRANTED) {
+                    console.log('permission denied');
+                    return
+                }
+            } catch (err) {
+                console.warn(err);
+                return
+            }
+        }
+        downloadFile(file);
+    };
+    const handleLongPress = (flag) =>{
+
+    }
     const renderItem = ({item}) =>{
         return(
             <View style = {{flexDirection: item.sender !== sender.email ? 'row': ''}}>
                 {item.sender !== sender.email && 
-                <View style={[styles.imgContainer, {position: 'absolute', bottom: 4, left: 0}]}>
-                    {/* <Image
-                        style={styles.image}
-                        source={{ uri: 'https://example.com/your-image.jpg' }}
-                    /> */}
-                </View>}
-            <View style={[
-                styles.messageContainer,
-                {
-                    alignSelf: item.sender === sender.email ? 'flex-end' : 'flex-start',
-                    backgroundColor: item.sender === sender.email ? '#0000FF' : '#f5f5f5',
-                    marginRight: item.sender === sender.email ? 15 : 0,
-                    marginLeft: item.sender !== sender.email ? 50 : 0,
-                    borderTopLeftRadius: item.sender === sender.email ? 20 : 12,
-                    borderTopRightRadius: item.sender !== sender.email ? 20 : 12,
-                    borderBottomLeftRadius: item.sender === sender.email ? 20 : 2,
-                    borderBottomRightRadius: item.sender !== sender.email ? 20 : 2,
-
-
+                    <View style={[styles.imgContainer, { position: 'absolute', bottom: 4, left: 0 }]}>
+                    <Image
+                        style={{height: 27, width: 27}}
+                            source={{ uri: `http://localhost:5000/getImage/${encodeURIComponent(receiver.email)}` }}
+                    />
+                    </View>
                 }
-            ]}>
-            
-                <Text style={[
-                    styles.messageText,
+                <View style={[
+                    styles.messageContainer,
                     {
-                        color: item.sender === sender.email ? 'white' : 'black',
+                        alignSelf: item.sender === sender.email ? 'flex-end' : 'flex-start',
+                        backgroundColor: item.file || item.sender !== sender.email ? '#f5f5f5' : '#0000FF' ,
+                        marginRight: item.sender === sender.email ? 15 : 0,
+                        marginLeft: item.sender !== sender.email ? 50 : 0,
+                        borderTopLeftRadius: item.sender === sender.email ? 20 : 12,
+                        borderTopRightRadius: item.sender !== sender.email ? 20 : 12,
+                        borderBottomLeftRadius: item.sender === sender.email ? 20 : 2,
+                        borderBottomRightRadius: item.sender !== sender.email ? 20 : 2,
+
+
                     }
                 ]}>
-                    {item.text}
-                </Text>
-                {/* <Text style={{ fontSize: 12, textAlign: 'right', color: '#f5f5f5', fontStyle: 'italic'}}>{timestamp(item.createdAt)}</Text> */}
+                <TouchableWithoutFeedback 
+                    onLongPress={() => {
+                        if(sender.email === item.sender) setIsVisible(true);
+                    }} 
+                    delayLongPress={200}
+                >
+                {
+                    item.file ? 
+                    (
+                        <TouchableOpacity activeOpacity = {0.7} style = {{flexDirection: 'row'}} onPress={() => {
+                            // downloadFile(item.file)
+                            requestPermission(item.file);
+                        }}>
+                            <View style={{ backgroundColor: '#e0e0e0', height: 40, width: 40, borderRadius: 25, justifyContent: 'center', alignItems: 'center'}}>
+                                <FontAwesomeIcon icon={faFileText} size={25} color="gray" />
+                            </View>
+                            <View style = {{marginLeft: 10}}>
+                                <Text style = {{color: 'black', fontSize: 15, maxWidth: 150}}>{trimmedFileName(item.file)}</Text>
+                                <Text style = {{fontSize: 13, marginTop: 2 }}>{(item.file.size / 1024).toFixed(1)} KB</Text>
+                            </View>
+                        </TouchableOpacity>
+                    ):
+                    (
+                        <Text style={[
+                            styles.messageText,
+                            {
+                                color: item.sender === sender.email ? 'white' : 'black',
+                            }
+                        ]}>
+                            {item.text}
+                        </Text>
+                    )
+                    }
+                    {/* <Text style={{ fontSize: 12, textAlign: 'right', color: '#f5f5f5', fontStyle: 'italic'}}>{timestamp(item.createdAt)}</Text> */}
+                    </TouchableWithoutFeedback>
+                </View>
             </View>
-            </View>
+        )
+    }
+    // const [selectedDuration, setSelectedDuration] = useState(null)
+    const renderDurationItem = ({item}) =>{
+        return(
+            <TouchableOpacity onPress={() => console.log('okay')} style={{ flexDirection: 'row', alignItems: 'center', padding: 10 }}>
+                {/* <Radio selected={'5' === item.id} /> */}
+                <Text>{item.label}</Text>
+            </TouchableOpacity>
         )
     }
     return (
@@ -319,6 +346,26 @@ const Inbox = () => {
                     </>)}
                 </View>
                <View style={styles.allMessageContainer}>
+                    <Modal
+                        style={{ backgroundColor: 'white', width: '80%', height: '30%', top: '30%', left: '5%', position: 'absolute' }}
+                        isVisible={isVisible}
+                        avoidKeyboard={false}
+                        onBackdropPress={() => setIsVisible(false)}
+                    >
+                        {/*  */}
+                        <FlatList
+                            data={[
+                                { id: 1, label: '5 seconds', value: 5 },
+                                { id: 2, label: '30 seconds', value: 30 },
+                                { id: 3, label: '1 minute', value: 60 },
+                                { id: 4, label: '5 minutes', value: 300 },
+                                { id: 5, label: '30 minutes', value: 1800 },
+                                { id: 6, label: '1 hour', value: 3600 },
+                            ]}
+                            renderItem={renderDurationItem}
+                            keyExtractor={(item) => item.id.toString()}
+                        />
+                    </Modal>
                    <FlatList
                        data={messages}
                        keyExtractor={(item, index) => index.toString()} // Use a unique key for each item
@@ -353,7 +400,6 @@ const Inbox = () => {
                     <TouchableOpacity
                         onPress={() => { handleSend(); setValue('') }}
                     >
-
                     <Icon
                         name='send'
                         size={27}
@@ -373,7 +419,6 @@ const styles = StyleSheet.create({
         alignItems: 'center',
     },
     messageOptions: {
-        // backgroundColor: 'white',
         flexDirection: 'row',
         alignItems: 'center',
         justifyContent: 'space-between',
@@ -381,11 +426,9 @@ const styles = StyleSheet.create({
         paddingRight: 20,
         paddingLeft: 20,
         paddingBottom: 10,
-        // backgroundColor: 'red',
-        // padding: 5,
         position: 'absolute',
         bottom: 0,
-        // marginleft: 20,
+       
         
     },
     input: {
@@ -399,11 +442,8 @@ const styles = StyleSheet.create({
         height: 35,
     },
     allMessageContainer:{
-        // height: '90%',
-        marginTop: 10,
-        marginBottom: 90,
+        marginBottom: 70,
         backgroundColor: 'white',
-        // borderBottomWidth: 1,
         
     },
     messageContainer: {
@@ -412,7 +452,6 @@ const styles = StyleSheet.create({
         paddingRight: 14,
         paddingBottom: 10,
         paddingTop: 10,
-        // borderTopLeftRadius: 20,
         marginBottom: 5,
         marginTop: 5,
     },
@@ -425,15 +464,12 @@ const styles = StyleSheet.create({
         lineHeight: 21,
         fontSize: 16,
         fontFamily: 'Arial',
-        // color: 'white',
     },
     timestamp: {
         fontSize: 12,
         color: 'gray',
     },
     imgContainer: {
-        width: 27,
-        height: 27,
         borderRadius: 50,
         overflow: 'hidden',
         backgroundColor: '#ebebeb',

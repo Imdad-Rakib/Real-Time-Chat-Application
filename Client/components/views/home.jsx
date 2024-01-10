@@ -107,14 +107,26 @@ const Home = ({navigation}) =>{
             email = item.creator
         }
         let msg = item.last_msg;
-
         msg = msg.split('\n')[0];
         if(msg.length > 30){
             msg = msg.slice(0, 30);
             msg += '....'
         }
         msg += '  ' + timestamp(item.last_updated);
-        if(item.updated_by === user.email) msg = 'You: ' + msg;
+        
+        if(item.last_msg === ''){
+            if(item.updated_by === user.email){
+                msg = 'You sent an attachment' + msg;
+            }
+            else{
+                msg = 'Attachment' + msg;
+            }
+        }
+        else{
+            if(item.update_by === user.email){
+                msg = 'You: ' + msg;
+            }
+        }
         return (
             <TouchableOpacity
                 style={styles.nameContainer}
@@ -124,8 +136,11 @@ const Home = ({navigation}) =>{
                 <View style={styles.imgContainer }>
                     <Image
                         style={styles.image}
-                        source={require('../../assets/user1.png' )}
+                        source={{ uri: `http://localhost:5000/getImage/${encodeURIComponent(email)}` }}
                     />
+                </View>
+                <View style={{ backgroundColor: 'green', width: 18, height: 18, position: 'absolute', borderRadius: 50, borderColor: 'white', borderWidth: 3.5, left: 52, top: 42 }}>
+
                 </View>
                 <View style = {{marginLeft: 15}}>
                     <Text style={{
@@ -186,6 +201,7 @@ const styles = StyleSheet.create({
     nameContainer: {
         flexDirection: 'row',
         // borderWidth: 1,
+        marginBottom: 5,
         paddingTop: 5,
         paddingBottom: 5,
         alignItems: 'center',

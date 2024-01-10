@@ -1,4 +1,4 @@
-import uploader from "../../utilities/multipleUploader.mjs";
+import uploader from "../../utilities/singleUploader.mjs";
 
 function fileUpload(req, res, next) {
     const upload = uploader(

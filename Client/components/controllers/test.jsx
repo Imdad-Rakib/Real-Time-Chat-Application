@@ -9,7 +9,7 @@ const MyButtonPage = () => {
   const showAlert = (msg) => {
     Alert.alert(
       'Downloaded',
-      err,
+      msg,
       [
         {
           text: 'OK',
@@ -20,7 +20,8 @@ const MyButtonPage = () => {
   }
 
 
-  const downloadFile = () => {
+  const downloadFile = (fileName) => {
+      console.log('fileName', fileName);
       const { config, fs } = RNFetchBlob;
       const date = new Date();
       const fileDir = fs.dirs.DownloadDir;
@@ -33,55 +34,25 @@ const MyButtonPage = () => {
           notification: true,
           path:
             fileDir +
-            '/download_' +
-            Math.floor(date.getDate() + date.getSeconds() / 2) +
-            '.pdf',
+            '/' +
+            fileName,
+            // Math.floor(date.getDate() + date.getSeconds() / 2) +
           description: 'file download',
         },
       })
-        .fetch('GET', 'http://localhost:5000/inbox/download/chemistry-1700456018398.pdf')
+        .fetch('GET', `http://localhost:5000/inbox/download/${fileName}`)
       .then(res => {
           // the temp file path
+        // console.log(res);
         console.log('The file saved to ', res.path());
         showAlert('file downloaded successfully ');
       });
   };
 
-  const requestStoragePermission = async () => {
-    try {
-      const granted = await PermissionsAndroid.request(
-        // [
-          // PermissionsAndroid.PERMISSIONS.WRITE_EXTERNAL_STORAGE,
-          PermissionsAndroid.PERMISSIONS.READ_EXTERNAL_STORAGE,
-        // ],
-        {
-          title: 'Storage Permission Required',
-          message:
-            'Application needs access to your storage to download File ',
-          buttonNeutral: 'Ask Me Later',
-          buttonNegative: 'Cancel',
-          buttonPositive: 'OK',
-        },
-      );
-      console.log(granted);
-      // console.log(PermissionsAndroid.RESULTS);
-      if (granted === PermissionsAndroid.RESULTS.GRANTED) {
-        console.log('You can use the Storage');
-      } 
-      else if(granted === 'never_ask_again'){
-        Linking.openSettings();
-      } 
-      else {
-        console.log('Storage permission denied');
-      }
-    } catch (err) {
-      console.warn(err);
-    }
-  };
-
+  
   const handleButtonPress = () => {
-    console.log('Button Pressed!');
-    requestStoragePermission();
+    downloadFile('video.mp4');
+    // requestStoragePermission();
   };
 
   return (

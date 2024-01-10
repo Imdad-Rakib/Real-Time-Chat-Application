@@ -8,6 +8,7 @@ import path from 'path';
 import { fileURLToPath } from 'url';
 import cors from 'cors'
 import { createServer } from 'http';
+
 // internal import
 import { Message } from './models/message.mjs';
 import { Conversation } from './models/conversation.mjs';
@@ -39,7 +40,7 @@ mongoose
     .catch(err => console.log(err));
 
 
-// await Conversation.deleteMany(
+// await Message.deleteMany(
 //     {},
 // )
 // io.on('connection', (socket) => {
@@ -82,7 +83,6 @@ app.use(express.static(path.join(__dirname, 'public')));
 app.use(cookieParser(process.env.COOKIE_SECRET));
 
 //routing setup
-
 
 app.use('/', loginRouter);
 app.use('/conversations', conversationsRouter);

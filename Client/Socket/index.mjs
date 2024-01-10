@@ -28,40 +28,40 @@ const socketConfiguration = (email, dispatch) => {
   })
 }
 
-const handleSend = (socket, dispatch, sender, receiver, sender_name, receiver_name, conversation_id, room_name, text) => {
-  if (text === '') {
-    return;
-  }
-  socket.emit('private_message', {
-    text,
-    conversation_id,
-    sender,
-    receiver,
-    sender_name,
-    receiver_name,
-    room_name,
-  }, (res) => {
-    if (res.error){
-      console.log(res.error)
-    }
-    else {
-      let x = {...store.getState().currentChat}
-      if (x.conversation_id === ''){
-        x.conversation_id = res.conversation._id;
-        x.room = res.conversation.last_room;
-        dispatch(setCurrentChat(x));
-      }
-      // console.log(res.conversation);
-      // dispatch(setCurrentChat(x));
-      dispatch(addMessage(res.msg))
-      dispatch(updateConversation(res.conversation));
-    }
-  })
-  // setMessages(prev => {
-  //   const newMessages = [{ text: value, sender: sender.email, receiver: receiver.email, createdAt: Date.now() }, ...prev]
-  //   return newMessages;
-  // })
-  // setValue('');
-}
+// const handleSend = (socket, dispatch, sender, receiver, sender_name, receiver_name, conversation_id, room_name, text) => {
+//   if (text === '') {
+//     return;
+//   }
+//   socket.emit('private_message', {
+//     text,
+//     conversation_id,
+//     sender,
+//     receiver,
+//     sender_name,
+//     receiver_name,
+//     room_name,
+//   }, (res) => {
+//     if (res.error){
+//       console.log(res.error)
+//     }
+//     else {
+//       let x = {...store.getState().currentChat}
+//       if (x.conversation_id === ''){
+//         x.conversation_id = res.conversation._id;
+//         x.room = res.conversation.last_room;
+//         dispatch(setCurrentChat(x));
+//       }
+//       // console.log(res.conversation);
+//       // dispatch(setCurrentChat(x));
+//       dispatch(addMessage(res.msg))
+//       dispatch(updateConversation(res.conversation));
+//     }
+//   })
+//   // setMessages(prev => {
+//   //   const newMessages = [{ text: value, sender: sender.email, receiver: receiver.email, createdAt: Date.now() }, ...prev]
+//   //   return newMessages;
+//   // })
+//   // setValue('');
+// }
 
-export {socketConfiguration, handleSend};
+export {socketConfiguration};

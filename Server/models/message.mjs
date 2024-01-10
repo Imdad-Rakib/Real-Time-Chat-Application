@@ -13,6 +13,15 @@ const messageSchema = Schema(
         text: {
             type: String,
         },
+        file: {
+            type: Object,
+            // default: [],
+            // size:{
+            //     type: String,
+            //     default: ''
+            // },
+            // name:
+        },
         sender: {
            type: String
         },

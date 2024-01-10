@@ -18,7 +18,7 @@ const conversationSlice = createSlice({
             state.conversation = [action.payload, ...x];
         },
         updateConversationStatus: (state, action) =>{
-            console.log('here');
+            // console.log('here');
             let x = [...state.conversation];
             let  foundItem = x.find((item) => item.creator === action.payload.creator && item.participant === action.payload.participant);
             foundItem.isOpened = true;

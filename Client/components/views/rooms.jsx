@@ -1,4 +1,4 @@
-import {Alert,  Text, FlatList, View, TouchableOpacity, TouchableHighlight, StyleSheet, TextInput, Button } from "react-native"
+import {Alert,  Text, FlatList, View, TouchableOpacity, TouchableHighlight, StyleSheet, TextInput, Button, Image, TouchableWithoutFeedback} from "react-native"
 import Icon from  'react-native-vector-icons/MaterialIcons'
 import {useEffect, useState} from 'react'
 import Modal from "react-native-modal";
@@ -115,7 +115,6 @@ const Rooms = () => {
   }, [value])
   return (
     <View style = {{height: '100%', backgroundColor: 'white'}}>
-
         <Modal
           style = {{backgroundColor: 'white', width:'80%', height: '30%', top: '30%', left: '5%', position: 'absolute'}}
           isVisible={isVisible}
@@ -135,7 +134,6 @@ const Rooms = () => {
             >
               <Button 
                 title = 'Create' 
-                style = {{backgroundColor: 'red'}}
                 onPress={createNewRoom}
               />
             </TouchableOpacity>
@@ -146,6 +144,7 @@ const Rooms = () => {
       </View>
       <View style = {{height: 1, borderBottomWidth: 1, borderColor: '#ccc'}}/>
       <View style = {{padding: 10, marginLeft: 10}}>
+
         <FlatList
           data={rooms}
           keyExtractor={(item, index) => index.toString()} // Use a unique key for each item
