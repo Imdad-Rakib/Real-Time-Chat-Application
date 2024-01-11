@@ -13,7 +13,7 @@ const timestamp = (time) => {
     } else if (messageTime.isSame(currentTime, 'year')) {
         return messageTime.format('MMMM D');
     } else {
-        return messageTime.format('YYYY, MMMM D');
+        return messageTime.format('MMMM D, YYYY');
     }
 };
 export {timestamp}

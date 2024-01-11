@@ -49,7 +49,7 @@ export default function Login({navigation}) {
             else{
                 dispatch(setUser(response));
                 socketConfiguration(response.email, dispatch);
-                navigation.navigate('Chats');
+                navigation.navigate('Home');
                 // const socket = io('http://localhost:5000')
                 // socket.on('connect', () => {
                 //     dispatch(setSocket(socket));

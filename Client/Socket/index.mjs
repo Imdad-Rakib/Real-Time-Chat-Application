@@ -16,9 +16,9 @@ const socketConfiguration = (email, dispatch) => {
     socket.emit('client-info', email);
   });
   socket.on('private_message', (msg, conversation) => {
-    if (msg.sender === store.getState().currentChat.email) {
-      if (conversation.last_room !== store.getState().currentChat.room){
-        let x = {...store.getState().currentChat};
+    let x = {...store.getState().currentChat};
+    if (msg.sender === x.email) {
+      if (conversation.last_room !== x.room){
         x.room = conversation.last_room;
         dispatch(setCurrentChat(x))
       }
@@ -26,42 +26,31 @@ const socketConfiguration = (email, dispatch) => {
     }
     dispatch(updateConversation(conversation))
   })
+  socket.on('Disappearing_Messages_Activated', (payload)=>{
+    let x = {...store.getState().currentChat};
+    if(payload.activatedBy === x.email){
+      x.disappearing_flag = true;
+      x.room = payload.room;
+      dispatch(setCurrentChat(x));
+    }
+  })
+  socket.on('Messages_Expired', (payload, conversation) =>{
+    console.log('expired ', conversation);
+    let x = {...store.getState().currentChat};
+    if(payload.conversation_id === x.conversation_id && payload.room === x.room){
+      x.disappearing_flag = false;
+      dispatch(setCurrentChat(x));
+    }
+    dispatch(updateConversation(conversation))
+  })
+  socket.on('Disappearing_Messages_Deactivated', (payload) =>{
+    let x = {...store.getState().currentChat};
+    if (payload.activatedBy === x.email) {
+      x.disappearing_flag = false;
+      x.room = payload.room;
+      dispatch(setCurrentChat(x));
+    }
+  })
 }
-
-// const handleSend = (socket, dispatch, sender, receiver, sender_name, receiver_name, conversation_id, room_name, text) => {
-//   if (text === '') {
-//     return;
-//   }
-//   socket.emit('private_message', {
-//     text,
-//     conversation_id,
-//     sender,
-//     receiver,
-//     sender_name,
-//     receiver_name,
-//     room_name,
-//   }, (res) => {
-//     if (res.error){
-//       console.log(res.error)
-//     }
-//     else {
-//       let x = {...store.getState().currentChat}
-//       if (x.conversation_id === ''){
-//         x.conversation_id = res.conversation._id;
-//         x.room = res.conversation.last_room;
-//         dispatch(setCurrentChat(x));
-//       }
-//       // console.log(res.conversation);
-//       // dispatch(setCurrentChat(x));
-//       dispatch(addMessage(res.msg))
-//       dispatch(updateConversation(res.conversation));
-//     }
-//   })
-//   // setMessages(prev => {
-//   //   const newMessages = [{ text: value, sender: sender.email, receiver: receiver.email, createdAt: Date.now() }, ...prev]
-//   //   return newMessages;
-//   // })
-//   // setValue('');
-// }
 
 export {socketConfiguration};

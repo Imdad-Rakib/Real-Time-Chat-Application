@@ -8,6 +8,7 @@ const currentChatSlice = createSlice({
     email: '',
     room: '',
     conversation_id: '',
+    disappearing_flag: false,
   },
   reducers: {
     setCurrentChat: (state, action) => {
@@ -15,6 +16,7 @@ const currentChatSlice = createSlice({
       state.email = action.payload.email || '';
       state.room = action.payload.room || '';
       state.conversation_id = action.payload.conversation_id || '';
+      state.disappearing_flag = action.payload.disappearing_flag;
     }
   },
 });

@@ -42,7 +42,12 @@ const Inbox = () => {
     useEffect(() =>{
         navigation.setOptions({
             headerTitle: () => (
-                <TouchableOpacity style = {{flexDirection: 'row'}}>
+                <TouchableOpacity 
+                    style = {{flexDirection: 'row'}}
+                    onPress={() =>{
+                        navigation.navigate('Chat Options')
+                    }}
+                >
                     <View style={[styles.imgContainer, {height: 42, width: 42,  marginRight: 8, marginLeft: -20 }]}>
                     <Image
                         style={{height: 42, width: 42}}
@@ -98,6 +103,9 @@ const Inbox = () => {
                 }
                 else {
                     dispatch(setMessages(response.messages));
+                    let x = {...receiver};
+                    x.disappearing_flag = response.disappearing_flag;
+                    dispatch(setCurrentChat(x))
                 }
             }
             catch (err) {
@@ -109,6 +117,7 @@ const Inbox = () => {
     }, [receiver]);
     
     const handlePress = () =>{
+        console.log('okay');
         if(receiver.conversation_id === ''){
             showError('Start a conversation to switch room');
         }
@@ -343,6 +352,7 @@ const Inbox = () => {
                             style = {{marginTop: 1, color: 'white'}}
                         />
                         <Text style = {{color: 'white', textAlign: 'center', fontSize: 16, fontWeight: 'bold'}}>{receiver.room}</Text>
+                        <Text style = {{color: 'white', fontSize: 20}}>{receiver.disappearing_flag ? " Timer" : ""}</Text>
                     </>)}
                 </View>
                <View style={styles.allMessageContainer}>
@@ -365,7 +375,8 @@ const Inbox = () => {
                             renderItem={renderDurationItem}
                             keyExtractor={(item) => item.id.toString()}
                         />
-                    </Modal>
+                    </Modal> 
+                    
                    <FlatList
                        data={messages}
                        keyExtractor={(item, index) => index.toString()} // Use a unique key for each item
@@ -442,7 +453,7 @@ const styles = StyleSheet.create({
         height: 35,
     },
     allMessageContainer:{
-        marginBottom: 70,
+        marginBottom: 85,
         backgroundColor: 'white',
         
     },

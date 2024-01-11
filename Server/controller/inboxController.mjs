@@ -7,6 +7,7 @@ import { io } from "../app.mjs";
 //external
 import path from 'path';
 import { fileURLToPath } from 'url';
+import { DisappearingMsg } from "../models/DisappearingMsg.mjs";
 
 
 const __filename = fileURLToPath(import.meta.url);
@@ -24,9 +25,15 @@ async function getMessage(req, res, next){
         })
         .select('-_id sender receiver text createdAt file')
         .sort({createdAt: -1});
-        res.json({
-            messages,
+        let x = await DisappearingMsg.findOne({
+            conversation_id,
+            room: name
         })
+        let response_body = {
+            messages,
+            disappearing_flag: (x !== null ? true: false)
+        }
+        res.json(response_body);
     }catch(err){
         console.log(err);
         res.json({
@@ -117,5 +124,106 @@ async function singleDownloader(req, res, next){
         }
     })
 }
-
-export {getMessage, handlePrivateMsg, singleDownloader}
+async function destroyMsg(conversation_id, room, expiry){
+    let x = await DisappearingMsg.findOne({
+        conversation_id,
+        room
+    })
+    if(!x) return
+    await DisappearingMsg.deleteMany({
+        conversation_id,
+        room
+    })
+    x = await Room.findOne({
+        conversation_id,
+        name: room
+    })
+    await Message.deleteMany({
+        room_id: x._id,
+        createdAt: {$gte: new Date(Date.now() - expiry)}
+    })
+    let message = await Message.find({
+        room_id: x._id
+    })
+    .select('text')
+    .sort({ createdAt: -1 })
+    .limit(1)
+    let updated_conversation = await Conversation.findOneAndUpdate(
+        {_id: conversation_id},
+        { $set: {last_msg : message[0].text}},
+        {new: true}
+    )
+    x = await Conversation.findOne({
+        _id: conversation_id
+    })
+    let client1 = await ActiveClients.findOne({
+        email: x.creator
+    })
+    let client2 = await ActiveClients.findOne({
+        email: x.participant
+    })
+    if (client1){
+        console.log('sending');
+        io.to(client1.connectionId).emit('Messages_Expired', {
+            conversation_id,
+            room
+        }, updated_conversation)
+    }
+    if (client2) {
+        io.to(client2.connectionId).emit('Messages_Expired', {
+            conversation_id,
+            room
+        }, updated_conversation)
+    }
+}
+async function setDisappearingMsg(req, res, next){
+    const {conversation_id, room, expiry, receiver, sender} = req.body;
+    try{
+        let disappearingMsg = new DisappearingMsg({
+            conversation_id,
+            room,
+            expiry: new Date(Date.now() + expiry)
+        })
+        let x = await disappearingMsg.save();
+        setTimeout(() => {
+            destroyMsg(conversation_id, room, expiry)
+        }, expiry);
+        let client = await ActiveClients.findOne({
+            receiver
+        })
+        if(client){
+            io.to(client.connectionId).emit('Disappearing_Messages_Activated', {
+                expiry,
+                activatedBy: sender,
+                room,
+            })
+        }
+        console.log('activated');
+        res.status(200).json({
+            success: true
+        })
+    }
+    catch(err){
+        console.log(err);
+        res.status(500).json({
+            error: 'Internal server error'
+        })
+    }
+}
+async function unsetDisappearingMsg(req, res, next){
+    const {conversation_id, room, receiver, sender} = req.body;
+    await DisappearingMsg.deleteMany({
+        conversation_id, 
+        room
+    })
+    let client = ActiveClients.findOne(receiver);
+    io.to(client.connectionId).emit('Disappearing_Messages_Deactivated',
+    {
+        deactivatedBy: sender,
+        room
+    })
+    res.status(200).json({
+        success: true
+    })
+}
+export {getMessage, handlePrivateMsg, singleDownloader, setDisappearingMsg, unsetDisappearingMsg}
